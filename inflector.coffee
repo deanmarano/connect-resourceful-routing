@@ -5,7 +5,9 @@ String.prototype.pluralize = ->
     @
 
 String.prototype.singularize = ->
-  if @charAt(@length - 1) == 's'
+  if @.match /ies$/
+    @replace('ies', 'y')
+  else if @charAt(@length - 1) == 's'
     @substring(0, @length - 1)
   else
     @

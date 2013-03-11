@@ -1,22 +1,7 @@
 require './inflector'
+Route = require './route'
 
 p = (str)-> console.log(str)
-
-class Route
-  constructor: (options)->
-    @method = options.method
-    @path = options.path
-    @controller = options.controller
-    @action = options.action
-
-  toString: ->
-    switch @method
-      when 'get' then method = "GET    "
-      when 'put' then method = "PUT    "
-      when 'delete' then method = "DELETE "
-      when 'post' then method = "POST   "
-    pathPad = Array(40 - @path.length).join(" ")
-    "#{method} #{@path}#{pathPad}to: #{@controller}##{@action}"
 
 class Mapper
   constructor: (@parent, @path)->
@@ -24,6 +9,13 @@ class Mapper
     @routes = []
 
   resources: (name, fn)->
+    resource = new Resource(@, name, @path, include: 'index')
+    @nestedResources.push(resource)
+    if fn
+      fn.call(resource, fn)
+    resource
+
+  resource: (name, fn)->
     resource = new Resource(@, name, @path)
     @nestedResources.push(resource)
     if fn
@@ -89,18 +81,20 @@ class Mapper
     r
 
   print: ->
+    max = 0
     for route in @allRoutes()
-      p route.toString()
+      max = route.path.length if route.path.length > max
+    for route in @allRoutes()
+      p route.toString(max)
 
 class Resource
-  constructor: (@parent, name, @path)->
+  constructor: (@parent, name, @path, @options = {})->
     @name = name#.pluralize()
     @routes = @generateRoutes()
     @resourceMappers = []
 
   generateRoutes: ->
-    [
-      @indexRoute(),
+    routes = [
       @newRoute(),
       @createRoute(),
       @showRoute(),
@@ -108,6 +102,10 @@ class Resource
       @updateRoute(),
       @destroyRoute()
     ]
+
+    if @options.include == 'index'
+      routes.push(@indexRoute())
+    routes
 
   indexRoute: ->
     new Route
@@ -160,11 +158,14 @@ class Resource
 
   resources: (name, fn)->
     resourcePath = @path + @name + '/'
-    mapper = new Mapper(@parent, @memberPath() + '/')
+    mapper = new Mapper(@parent, @resourcePath() + '/')
     @resourceMappers.push mapper.resources(name, fn)
 
+  resourcePath: ->
+    @path + @name + "/:#{@name.singularize()}Id"
+
   memberPath: ->
-    @path + @name + "/:#{@name.singularize()}_id"
+    @path + @name + "/:id"
 
   collection: (fn)->
     @collectionMapper = new Mapper(@parent, @path + @name)
@@ -176,12 +177,12 @@ class Resource
 
   allRoutes: ->
     r = @routes.slice(0, @routes.length)
+    if @memberMapper?
+      r = @memberMapper.allRoutes().concat r
     for resource in @resourceMappers
       r = r.concat resource.allRoutes()
     if @collectionMapper?
       r = r.concat @collectionMapper.allRoutes()
-    if @memberMapper?
-      r = r.concat @memberMapper.allRoutes()
     r
 
 Application =
@@ -189,19 +190,5 @@ Application =
     draw: (fn)->
       @mapper = new Mapper(null, '/')
       fn.call(@mapper, fn)
-
-Application.routes.draw ->
-  @resources 'deals', ->
-    @collection ->
-      @post 'import'
-    @member ->
-      @get 'status'
-
-    @resources 'options', ->
-
-  @root
-    to: 'deals#index'
-
-#Application.routes.mapper.print()
 
 module.exports = Application
