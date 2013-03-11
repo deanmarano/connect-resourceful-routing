@@ -1,8 +1,6 @@
 require './inflector'
 Route = require './route'
 
-p = (str)-> console.log(str)
-
 class Mapper
   constructor: (@parent, @path)->
     @nestedResources = []
@@ -34,28 +32,28 @@ class Mapper
 
   post: (action)->
     @routes.push new Route
-      method: 'post'
+      method: 'POST'
       path: @path + '/' + action
       controller: @controller
       action: action
 
   get: (action)->
     @routes.push new Route
-      method: 'get'
+      method: 'GET'
       path: @path + '/' + action
       controller: @controller
       action: action
 
   put: (action)->
     @routes.push new Route
-      method: 'put'
+      method: 'PUT'
       path: @path + '/' + action
       controller: @controller
       action: action
 
   delete: (action)->
     @routes.push new Route
-      method: 'delete'
+      method: 'DELETE'
       path: @path + '/' + action
       controller: @controller
       action: action
@@ -85,7 +83,7 @@ class Mapper
     for route in @allRoutes()
       max = route.path.length if route.path.length > max
     for route in @allRoutes()
-      p route.toString(max)
+      console.log route.toString(max)
 
 class Resource
   constructor: (@parent, name, @path, @options = {})->
@@ -157,22 +155,17 @@ class Resource
       action: 'destroy'
 
   resources: (name, fn)->
-    resourcePath = @path + @name + '/'
-    mapper = new Mapper(@parent, @resourcePath() + '/')
+    resourcePath = @path + @name + "/:#{@name.singularize()}Id"
+    mapper = new Mapper(@parent, resourcePath + '/')
     @resourceMappers.push mapper.resources(name, fn)
-
-  resourcePath: ->
-    @path + @name + "/:#{@name.singularize()}Id"
-
-  memberPath: ->
-    @path + @name + "/:id"
 
   collection: (fn)->
     @collectionMapper = new Mapper(@parent, @path + @name)
     @collectionMapper.collection(@name, fn)
 
   member: (fn)->
-    @memberMapper = new Mapper(@parent, @memberPath())
+    memberPath = @path + @name + "/:id"
+    @memberMapper = new Mapper(@parent, memberPath)
     @memberMapper.member(@name, fn)
 
   allRoutes: ->

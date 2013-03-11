@@ -3,7 +3,7 @@ Route = require '../route'
 describe 'Route', ->
   it 'initializes from options', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts'
       controller: 'posts'
       action: 'index'
@@ -15,7 +15,7 @@ describe 'Route', ->
 
   it 'generates a proper regex for basic resources index', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts'
       controller: 'posts'
       action: 'index'
@@ -24,7 +24,7 @@ describe 'Route', ->
 
   it 'generates a proper regex for basic resources show', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts/:id'
       controller: 'posts'
       action: 'show'
@@ -34,7 +34,7 @@ describe 'Route', ->
 
   it 'generates a proper regex for basic resources edit', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts/:id/edit'
       controller: 'posts'
       action: 'edit'
@@ -44,7 +44,7 @@ describe 'Route', ->
 
   it 'generates a proper regex for a nested resource', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts/:postId/replies/:id'
       controller: 'posts'
       action: 'edit'
@@ -55,11 +55,10 @@ describe 'Route', ->
 
   it 'handles member actions', ->
     options =
-      method: 'get'
+      method: 'GET'
       path: '/posts/:id/upvote'
       controller: 'posts'
       action: 'upvote'
     route = new Route(options)
     expect(route.matches('/posts/13/upvote', 'GET')).toBe(true)
-    #expect(route.paramsHash(pathname: '/posts/13/replies/12').id).toBe('12')
-    #expect(route.paramsHash(pathname: '/posts/13/replies/12').postId).toBe('13')
+    expect(route.paramsHash(pathname: '/posts/13/upvote').id).toBe('13')

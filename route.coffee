@@ -1,6 +1,6 @@
 class Route
   constructor: (options)->
-    @method = options.method.toUpperCase()
+    @method = options.method
     @path = options.path
     @controller = options.controller
     @action = options.action
