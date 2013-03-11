@@ -1,5 +1,7 @@
 require './inflector'
 Route = require './route'
+ResourceRoutes = require './resourceRoutes'
+HTTPActionRoutes = require './httpActionRoutes'
 
 class Mapper
   constructor: (@parent, @path)->
@@ -22,41 +24,27 @@ class Mapper
 
   collection: (controller, fn)->
     @controller = controller
+    @_httpActionRoutes = new HTTPActionRoutes(@path, @controller)
     fn.call(@, fn)
     @
 
   member: (controller, fn)->
     @controller = controller
+    @_httpActionRoutes = new HTTPActionRoutes(@path, @controller)
     fn.call(@, fn)
     @
 
   post: (action)->
-    @routes.push new Route
-      method: 'POST'
-      path: @path + '/' + action
-      controller: @controller
-      action: action
+    @routes.push @_httpActionRoutes.postRoute(action)
 
   get: (action)->
-    @routes.push new Route
-      method: 'GET'
-      path: @path + '/' + action
-      controller: @controller
-      action: action
+    @routes.push @_httpActionRoutes.getRoute(action)
 
   put: (action)->
-    @routes.push new Route
-      method: 'PUT'
-      path: @path + '/' + action
-      controller: @controller
-      action: action
+    @routes.push @_httpActionRoutes.putRoute(action)
 
   delete: (action)->
-    @routes.push new Route
-      method: 'DELETE'
-      path: @path + '/' + action
-      controller: @controller
-      action: action
+    @routes.push @_httpActionRoutes.deleteRoute(action)
 
   parentPath: ->
     if @parent
@@ -86,73 +74,23 @@ class Mapper
       console.log route.toString(max)
 
 class Resource
-  constructor: (@parent, name, @path, @options = {})->
-    @name = name#.pluralize()
+  constructor: (@parent, @name, @path, @options = {})->
     @routes = @generateRoutes()
     @resourceMappers = []
 
   generateRoutes: ->
+    resourceRoutes = new ResourceRoutes(@path, @name)
     routes = [
-      @newRoute(),
-      @createRoute(),
-      @showRoute(),
-      @editRoute(),
-      @updateRoute(),
-      @destroyRoute()
+      resourceRoutes.newRoute(),
+      resourceRoutes.createRoute(),
+      resourceRoutes.showRoute(),
+      resourceRoutes.editRoute(),
+      resourceRoutes.updateRoute(),
+      resourceRoutes.destroyRoute()
     ]
 
-    if @options.include == 'index'
-      routes.push(@indexRoute())
+    routes.push(resourceRoutes.indexRoute()) if @options.include == 'index'
     routes
-
-  indexRoute: ->
-    new Route
-      path: "#{@path}#{@name}"
-      method: 'get'
-      controller: @name
-      action: 'index'
-
-  newRoute: ->
-    new Route
-      path: "#{@path}#{@name}/new"
-      method: 'get'
-      controller: @name
-      action: 'new'
-
-  createRoute: ->
-    new Route
-      path: "#{@path}#{@name}"
-      method: 'post'
-      controller: @name
-      action: 'create'
-
-  showRoute: ->
-    new Route
-      path: "#{@path}#{@name}/:id"
-      method: 'get'
-      controller: @name
-      action: 'show'
-
-  editRoute: ->
-    new Route
-      path: "#{@path}#{@name}/:id/edit"
-      method: 'get'
-      controller: @name
-      action: 'edit'
-
-  updateRoute: ->
-    new Route
-      path: "#{@path}#{@name}/:id"
-      method: 'put'
-      controller: @name
-      action: 'update'
-
-  destroyRoute: ->
-    new Route
-      path: "#{@path}#{@name}/:id"
-      method: 'delete'
-      controller: @name
-      action: 'destroy'
 
   resources: (name, fn)->
     resourcePath = @path + @name + "/:#{@name.singularize()}Id"
@@ -160,7 +98,8 @@ class Resource
     @resourceMappers.push mapper.resources(name, fn)
 
   collection: (fn)->
-    @collectionMapper = new Mapper(@parent, @path + @name)
+    collectionPath = @path + @name
+    @collectionMapper = new Mapper(@parent, collectionPath)
     @collectionMapper.collection(@name, fn)
 
   member: (fn)->
