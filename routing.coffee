@@ -55,7 +55,7 @@ class Mapper
   root: (options)->
     [controller, action] = options.to.split("#")
     @routes.push new Route
-      method: 'get'
+      method: 'GET'
       path: '/'
       controller: controller
       action: action
