@@ -21,7 +21,9 @@ router = require 'connect-resourceful-routing'
 app = connect()
   .use router
     file: 'config/routes' # Optional - will look for config/routes.{coffee/js} by default.
-    handle404s: true # Optional - if you want your routes to be the end of the chain, use this. If you do use this, make sure you put this as the LAST middleware. Otherwise it will eat things like static assets and any other middleware.
+    handle404s: true # Optional - if you want your routes file to be the end of the chain, use this.
+    # If you do use this, make sure you put this as the LAST middleware.
+    # Otherwise it will eat things like static assets and any other middleware.
   .listen(3000)
 ```
 
