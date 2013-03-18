@@ -1,3 +1,5 @@
+Route = require './route'
+
 class HTTPActionRoutes
   constructor: (@path, @controller) ->
 
